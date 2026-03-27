@@ -120,4 +120,29 @@ Collections: Mengelompokkan semua endpoint API (seperti subscribe dan unsubscrib
 Environments: Kita bisa membuat variabel untuk URL (misal: {{base_url}}). Jadi, saat pindah dari localhost ke server production, kita cukup ganti satu variabel saja tanpa mengubah semua request satu per satu.
 
 Automated Testing: Kita bisa menulis script sederhana di tab "Tests" untuk memastikan status code yang kembali selalu 200 OK atau datanya sesuai, sehingga kita tidak perlu mengecek respon secara manual setiap kali push kode baru.
+
 #### Reflection Publisher-3
+1. Dalam kasus tutorial BambangShop ini, kita menggunakan Push Model.
+Hal ini terlihat jelas pada fungsi notify dan update, di mana publisher secara aktif mengirimkan objek Notification yang berisi data lengkap (judul produk, tipe, status, dll.) langsung ke subscriber melalui request HTTP POST. Subscriber tidak perlu bertanya atau meminta data tambahan; mereka tinggal menerima apa yang "didorong" oleh publisher.
+
+2. Jika kita mengubahnya menjadi Pull Model (di mana publisher hanya memberi tahu bahwa ada perubahan, lalu subscriber mengambil datanya sendiri), maka:
+
+Keuntungan:
+
+Fleksibilitas Data: Subscriber bisa memilih data apa saja yang ingin mereka ambil. Jika mereka hanya butuh judul produk tanpa URL-nya, mereka bisa menghemat bandwith.
+
+Konsistensi: Subscriber selalu mendapatkan data paling update langsung dari sumbernya saat mereka melakukan pull, meminimalisir risiko data "basi" jika ada jeda waktu pengiriman.
+
+Kekurangan:
+
+Beban Jaringan: Akan ada dua kali komunikasi (1. Notifikasi perubahan dari publisher, 2. Request data dari subscriber). Ini meningkatkan latensi dan beban kerja server.
+
+Kompleksitas Publisher: Publisher harus menyediakan endpoint API tambahan agar subscriber bisa melakukan pull data setelah menerima notifikasi.
+
+3. Jika kita memutuskan untuk tidak menggunakan multi-threading (menghapus thread::spawn) dan menjalankan proses notifikasi secara sekuensial (berurutan), program akan mengalami masalah berikut:
+
+Blocking/Performance Bottleneck: Program harus menunggu satu request HTTP selesai (menunggu respon dari webhook subscriber) sebelum bisa lanjut mengirim notifikasi ke subscriber berikutnya.
+
+Efek Domino jika Error: Jika ada satu subscriber yang URL-nya sedang down atau sangat lambat, maka seluruh proses publikasi produk akan tertahan. User yang memanggil fungsi publish baru akan mendapatkan respon "Success" setelah semua notifikasi (mungkin ratusan) selesai dikirim.
+
+User Experience (UX) Buruk: API akan terasa sangat lambat bagi pengguna yang melakukan update produk karena mereka dipaksa menunggu proses eksternal (pengiriman webhook) yang seharusnya bisa berjalan di background.
