@@ -77,6 +77,23 @@ This is the place for you to write reflections:
 ### Mandatory (Publisher) Reflections
 
 #### Reflection Publisher-1
+1. Dalam buku Head First Design Pattern, Subscriber (Observer) biasanya didefinisikan sebagai interface. Namun, di kasus BambangShop saat ini, sebuah Model struct saja sudah cukup. Kenapa? Karena saat ini semua subscriber kita memiliki perilaku yang seragam, yaitu menerima notifikasi melalui sebuah URL (webhook).
+
+Kita baru benar-benar membutuhkan trait jika nantinya ada kebutuhan untuk berbagai jenis subscriber yang perilakunya berbeda drastis. Misalnya, jika ada EmailSubscriber, SmsSubscriber, dan WebhookSubscriber yang masing-masing punya cara unik dalam memproses notifikasi. Untuk sekarang, karena hanya ada satu cara pengiriman, penggunaan struct jauh lebih simpel dan efisien di Rust.
+
+2. Meskipun Vec (list) bisa digunakan, penggunaan DashMap jauh lebih diperlukan dalam kasus ini karena alasan berikut:
+
+Uniqueness (Keunikan): DashMap secara otomatis menangani keunikan kunci (key). Jika kita menggunakan Vec, kita harus melakukan pengecekan manual setiap kali menambah data (iterasi seluruh list) untuk memastikan tidak ada URL yang ganda, yang mana memiliki kompleksitas waktu O(n).
+
+Efisiensi: Mencari atau menghapus data berdasarkan URL di DashMap memiliki rata-rata kompleksitas O(1), sedangkan pada Vec adalah O(n). Untuk aplikasi toko yang mungkin punya banyak subscriber, perbedaan performa ini sangat terasa.
+
+3. Sebenarnya, apa yang kita lakukan dengan lazy_static! dan SUBSCRIBERS sudah merupakan implementasi Singleton pattern. Kita memastikan hanya ada satu instance database "palsu" (di memori) yang bisa diakses secara global.
+
+Namun, di Rust, Singleton saja tidak cukup jika aplikasinya multi-threaded (seperti web server Rocket). Compiler Rust sangat ketat soal keamanan memori. Kita tidak bisa mengubah (mutate) variabel statis global tanpa mekanisme sinkronisasi.
+
+DashMap diperlukan bukan sebagai pengganti Singleton, melainkan sebagai container yang thread-safe.
+
+Jika kita hanya menggunakan HashMap biasa dalam Singleton, program akan error saat compile atau crash karena terjadi data race ketika dua thread mencoba menambah subscriber secara bersamaan.
 
 #### Reflection Publisher-2
 
