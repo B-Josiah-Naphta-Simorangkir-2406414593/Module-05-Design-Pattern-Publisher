@@ -96,5 +96,28 @@ DashMap diperlukan bukan sebagai pengganti Singleton, melainkan sebagai containe
 Jika kita hanya menggunakan HashMap biasa dalam Singleton, program akan error saat compile atau crash karena terjadi data race ketika dua thread mencoba menambah subscriber secara bersamaan.
 
 #### Reflection Publisher-2
+1. Walaupun MVC klasik menggabungkan logika bisnis dan penyimpanan di dalam Model, dalam pengembangan aplikasi modern, kita memisahkannya untuk mengikuti Single Responsibility Principle (SRP) dan Separation of Concerns (SoC).
 
+Model: Fokus hanya pada struktur data dan representasi entitas (misal: apa saja field yang ada di Subscriber).
+
+Repository: Fokus pada abstraksi penyimpanan data (data access logic). Jika suatu saat kita ingin ganti dari DashMap ke database asli seperti PostgreSQL, kita hanya perlu mengubah Repository tanpa menyentuh logika bisnis.
+
+Service: Tempat berkumpulnya "otak" aplikasi (business logic). Service yang mengatur alur data antara Repository dan Controller. Pemisahan ini membuat kode jauh lebih mudah diuji (unit testing) secara terpisah.
+
+2. Jika kita hanya menggunakan Model tanpa Service/Repository, kita akan terjebak dalam pola "Fat Model" (Anti-pattern).
+Bayangkan jika Subscriber struct juga harus menangani cara dia disimpan ke memory, cara dia memvalidasi URL-nya sendiri, hingga cara dia mengirimkan Notification.
+
+Kompleksitas Tinggi: Setiap model akan saling ketergantungan secara langsung (tight coupling). Perubahan kecil pada cara kita menyimpan data di Subscriber bisa merusak logika pengiriman di Notification.
+
+Sulit Maintenance: Kode akan menjadi sangat panjang dan sulit dibaca karena satu file menangani terlalu banyak hal sekaligus. Semakin banyak interaksi antar model, semakin sulit kita melacak di mana letak bug-nya.
+
+3. Postman sangat membantu dalam menjembatani proses backend development sebelum frontend tersedia. Kita bisa mensimulasikan berbagai request (GET, POST, DELETE) dengan parameter yang berbeda-beda secara cepat.
+
+Beberapa fitur Postman yang sangat berguna untuk proyek kelompok ke depannya:
+
+Collections: Mengelompokkan semua endpoint API (seperti subscribe dan unsubscribe) dalam satu folder yang bisa dibagikan (export/import) ke anggota tim lain.
+
+Environments: Kita bisa membuat variabel untuk URL (misal: {{base_url}}). Jadi, saat pindah dari localhost ke server production, kita cukup ganti satu variabel saja tanpa mengubah semua request satu per satu.
+
+Automated Testing: Kita bisa menulis script sederhana di tab "Tests" untuk memastikan status code yang kembali selalu 200 OK atau datanya sesuai, sehingga kita tidak perlu mengecek respon secara manual setiap kali push kode baru.
 #### Reflection Publisher-3
